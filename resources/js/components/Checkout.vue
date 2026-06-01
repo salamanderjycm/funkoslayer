@@ -41,7 +41,7 @@ const processing = ref(false);
 const generalError = ref('');
 const mp = ref(null);
 
-// Cálculo del total con la carga impositiva
+// Cálculo del total
 const total = computed(() => {
   const subtotal = props.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
   return subtotal * 1.10;
@@ -50,7 +50,7 @@ const total = computed(() => {
 // Función para inyectar el SDK de MercadoPago
 const loadMercadoPagoSDK = () => {
   return new Promise((resolve) => {
-    if (window.MarketPago) return resolve(window.MercadoPago);
+    if (window.MercadoPago) return resolve(window.MercadoPago);
     const script = document.createElement('script');
     script.src = 'https://sdk.mercadopago.com/js/v2';
     script.onload = () => resolve(window.MercadoPago);
@@ -60,13 +60,17 @@ const loadMercadoPagoSDK = () => {
 
 // Renderizado del Brick
 const renderBrick = async () => {
-  if (!props.isOpen) return;
+  // ESCUDO DE SEGURIDAD: Si no está abierto o el total es 0 o inválido, abortamos la creación.
+  if (!props.isOpen || total.value <= 0) {
+      return; 
+  }
+  
   generalError.value = '';
 
   try {
     const MercadoPago = await loadMercadoPagoSDK();
     
-    // Obtenemos la llave pública desde el backend
+    // Obtenemos tu llave pública desde el backend
     const keyData = await api.getMercadoPagoPublicKey();
     mp.value = new MercadoPago(keyData.public_key, { locale: 'es-PE' });
 
@@ -74,17 +78,18 @@ const renderBrick = async () => {
 
     const settings = {
       initialization: {
-        // Se formatea el monto a tipo Number con 2 decimales fijos para evitar errores de validación
+        // Ahora garantizamos que el monto siempre será el número final (ej. 1.10)
         amount: Number(total.value.toFixed(2)), 
       },
       customization: {
         visual: {
           style: { theme: 'dark' }
-        },
+        }
+        // Eliminamos el paymentMethods con maxInstallments para que acepte tarjetas de DÉBITO
       },
       callbacks: {
         onReady: () => {
-          // Formulario listo para interactuar
+          console.log("Brick construido exitosamente con monto:", total.value);
         },
         onSubmit: async (cardFormData) => {
           processing.value = true;
@@ -93,7 +98,6 @@ const renderBrick = async () => {
           try {
             cardFormData.description = 'Compra en Funko Slayer';
 
-            // Envío del token generado hacia el controlador de Laravel
             const result = await api.processDirectPayment(cardFormData);
 
             if (result.success && result.status === 'approved') {
@@ -116,7 +120,7 @@ const renderBrick = async () => {
       },
     };
 
-    // Desmontar controladores de instancias previas
+    // Desmontar el brick anterior si ya existía uno
     if (window.cardPaymentBrickController) window.cardPaymentBrickController.unmount();
 
     window.cardPaymentBrickController = await bricksBuilder.create(
@@ -130,11 +134,11 @@ const renderBrick = async () => {
   }
 };
 
-// Vigila la apertura del modal para instanciar el componente
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
+// EL CAMBIO PRINCIPAL: Ahora Vue vigila tanto que el modal se abra, COMO que el total esté listo.
+watch([() => props.isOpen, () => total.value], ([newIsOpen, newTotal]) => {
+  if (newIsOpen && newTotal > 0) {
     setTimeout(() => renderBrick(), 100);
-  } else {
+  } else if (!newIsOpen) {
     if (window.cardPaymentBrickController) window.cardPaymentBrickController.unmount();
   }
 });
