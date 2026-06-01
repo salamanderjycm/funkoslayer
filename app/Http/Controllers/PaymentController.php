@@ -15,103 +15,109 @@ class PaymentController extends Controller
 
     public function __construct()
     {
-        // Inicializacion de credenciales desde la configuracion de servicios 
-        // para prevenir conflictos generados por la cache en el entorno de produccion.
+        // Inicializacion de credenciales desde la configuracion de servicios
         $this->publicKey = config('services.mercadopago.public_key');
         $this->accessToken = config('services.mercadopago.access_token');
         $this->apiUrl = 'https://api.mercadopago.com';
     }
 
     /**
-     * Create a MercadoPago preference for the payment
+     * Procesa un pago directo usando Checkout API (v1/payments)
      */
-    public function createPreference(Request $request)
+    public function processPayment(Request $request)
     {
         try {
-            // Validacion de la estructura de datos entrante desde el cliente
+            // Validacion de la estructura de datos entrante desde el cliente (Frontend)
+            // En Checkout API, el frontend debe enviar el token de la tarjeta y el monto exacto
             $validated = $request->validate([
-                'items' => 'required|array',
-                'items.*.title' => 'required|string',
-                'items.*.quantity' => 'required|integer|min:1',
-                'items.*.unit_price' => 'required|numeric|min:0.01',
+                'transaction_amount' => 'required|numeric',
+                'token' => 'required|string',
+                'description' => 'required|string',
+                'installments' => 'required|integer',
+                'payment_method_id' => 'required|string',
                 'payer' => 'required|array',
-                'payer.name' => 'required|string',
                 'payer.email' => 'required|email',
+                'payer.identification.type' => 'nullable|string',
+                'payer.identification.number' => 'nullable|string',
             ]);
 
-            // Calculo del monto subtotal iterando sobre los elementos del carrito
-            $total = collect($validated['items'])->sum(function ($item) {
-                return $item['quantity'] * $item['unit_price'];
-            });
-
-            // Adicion de la carga impositiva del 10%
-            $tax = $total * 0.10;
-            $totalWithTax = $total + $tax;
-
-            // Generacion del registro persistente de la orden en estado inicial
+            // Generacion del registro persistente de la orden
             $order = Order::create([
                 'user_id' => auth()->id() ?? 1,
-                'total' => $totalWithTax,
+                'total' => floatval($validated['transaction_amount']),
                 'status' => 'pendiente',
             ]);
 
-          // En tu método createPreference, modifica el payload para que sea lo MÁS SIMPLE posible:
-$preferenceData = [
-    'items' => [
-        [
-            'title' => 'Producto de Prueba', // Nombre genérico para evitar filtros
-            'quantity' => 1,
-            'unit_price' => 1.10,
-            'currency_id' => 'PEN'
-        ]
-    ],
-    'back_urls' => [
-        'success' => 'https://funko.blog/',
-        'failure' => 'https://funko.blog/',
-        'pending' => 'https://funko.blog/'
-    ],
-    'auto_return' => 'approved',
-    // ELIMINA 'external_reference' y 'notification_url' POR AHORA para la prueba
-];
+            // Estructuracion del payload requerido por la API de Pagos (V1)
+            $paymentData = [
+                'transaction_amount' => floatval($validated['transaction_amount']),
+                'token' => $validated['token'],
+                'description' => $validated['description'],
+                'installments' => intval($validated['installments']),
+                'payment_method_id' => $validated['payment_method_id'],
+                'payer' => [
+                    'email' => $validated['payer']['email'],
+                ],
+                'external_reference' => strval($order->id),
+                'notification_url' => 'https://funko.blog/api/payment/webhook',
+            ];
 
-            // Peticion HTTP POST hacia la API de MercadoPago
+            // Inyeccion de datos de identificacion si estan presentes
+            if (!empty($validated['payer']['identification']['type']) && !empty($validated['payer']['identification']['number'])) {
+                $paymentData['payer']['identification'] = [
+                    'type' => $validated['payer']['identification']['type'],
+                    'number' => $validated['payer']['identification']['number']
+                ];
+            }
+
+            // Peticion HTTP POST hacia la API de MercadoPago v1/payments
             $response = Http::withHeaders([
-                        'Authorization' => 'Bearer ' . $this->accessToken,
-                        'Content-Type' => 'application/json',
-                        'X-Idempotency-Key' => uniqid(),
-            ])->post("{$this->apiUrl}/checkout/preferences", $preferenceData);
-            Log::info('MercadoPago Status', [
-    'status' => $response->status()
-]);
+                'Authorization' => 'Bearer ' . $this->accessToken,
+                'Content-Type' => 'application/json',
+                'X-Idempotency-Key' => uniqid(), // Clave unica para evitar cobros duplicados
+            ])->post("{$this->apiUrl}/v1/payments", $paymentData);
 
-Log::info('MercadoPago Body', [
-    'body' => $response->body()
-]);
-if ($response->failed()) {
+            $payment = $response->json();
 
-    Log::error('ERROR MERCADOPAGO', [
-        'status' => $response->status(),
-        'body' => $response->body(),
-        'json' => $response->json(),
-    ]);
+            // Manejo de errores de la pasarela
+            if ($response->failed()) {
+                Log::error('ERROR MERCADOPAGO (Checkout API)', [
+                    'status' => $response->status(),
+                    'json' => $payment,
+                ]);
 
-    dd(
-        $response->status(),
-        $response->body(),
-        $response->json()
-    );
-}
-            $preference = $response->json();
+                return response()->json([
+                    'error' => 'Error al procesar el pago con la tarjeta',
+                    'details' => $payment
+                ], 422);
+            }
 
+            // Actualizacion del estado de la orden local basado en la respuesta sincrona
+            if (isset($payment['status'])) {
+                $newStatus = match ($payment['status']) {
+                    'approved' => 'aprobado',
+                    'rejected' => 'rechazado',
+                    default => 'pendiente',
+                };
+                
+                $order->update([
+                    'status' => $newStatus,
+                    'mp_payment_id' => $payment['id'] ?? null
+                ]);
+            }
+
+            // Retorno del resultado al cliente
             return response()->json([
                 'success' => true,
-                'preference_id' => $preference['id'],
-                'init_point' => $preference['init_point'],
-                'sandbox_init_point' => $preference['sandbox_init_point'],
+                'payment_id' => $payment['id'] ?? null,
+                'status' => $payment['status'] ?? 'pending',
+                'status_detail' => $payment['status_detail'] ?? '',
             ]);
+
         } catch (\Exception $e) {
+            Log::error('Excepcion critica en processPayment', ['error' => $e->getMessage()]);
             return response()->json([
-                'error' => 'Fallo critico en la inicializacion del pago',
+                'error' => 'Fallo critico en la ejecucion del pago',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -123,39 +129,31 @@ if ($response->failed()) {
     public function handleWebhook(Request $request)
     {
         try {
-            // Deteccion de identificadores a traves de parametros URL o cuerpo JSON
             $type = $request->query('type') ?? $request->input('type');
             $id = $request->query('id') ?? $request->input('data.id');
 
             if ($type === 'payment' && $id) {
-                // Verificacion del estado definitivo del pago ante el proveedor
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->accessToken,
                 ])->get("{$this->apiUrl}/v1/payments/{$id}");
 
                 if ($response->successful()) {
                     $payment = $response->json();
-                    
                     $status = $payment['status'];
                     $orderId = $payment['external_reference'];
 
                     Log::info("Notificacion Webhook procesada. ID Orden: {$orderId}, Estado: {$status}");
 
-                    // Sincronizacion del estado de la orden en la base de datos local
                     $order = Order::find($orderId);
                     if ($order) {
                         if ($status === 'approved') {
                             $order->update(['status' => 'aprobado', 'mp_payment_id' => $id]);
-                            Log::info("Estado de Orden #{$orderId} actualizado a: APROBADA.");
                         } elseif ($status === 'rejected') {
                             $order->update(['status' => 'rechazado', 'mp_payment_id' => $id]);
-                            Log::info("Estado de Orden #{$orderId} actualizado a: RECHAZADA.");
                         }
                     }
                 }
             }
-
-            // Confirmacion de recepcion al servidor emisor
             return response()->json(['status' => 'received'], 200);
         } catch (\Exception $e) {
             Log::error('Excepcion en el procesamiento del Webhook:', ['error' => $e->getMessage()]);
@@ -163,45 +161,6 @@ if ($response->failed()) {
         }
     }
 
-    /**
-     * Callback de confirmacion de pago exitoso
-     */
-    public function success(Request $request)
-    {
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaccion procesada exitosamente',
-            'payment_id' => $request->query('payment_id'),
-        ]);
-    }
-
-    /**
-     * Callback de pago pendiente
-     */
-    public function pending(Request $request)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'La transaccion se encuentra pendiente de aprobacion',
-            'payment_id' => $request->query('payment_id'),
-        ]);
-    }
-
-    /**
-     * Callback de pago rechazado
-     */
-    public function failure(Request $request)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'La transaccion ha sido declinada',
-            'payment_id' => $request->query('payment_id'),
-        ]);
-    }
-
-    /**
-     * Obtencion de clave publica para el frontend
-     */
     public function getPublicKey()
     {
         return response()->json([

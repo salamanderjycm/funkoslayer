@@ -2,7 +2,7 @@
 const API_BASE_URL = '/api';
 
 // Helper to get token from localStorage
-const getToken = () => localStorage.getItem('token');
+const getToken = () => localStorage.getItem('token') || localStorage.getItem('auth_token');
 
 // Helper to make authenticated requests
 const fetchWithAuth = async (url, options = {}) => {
@@ -151,7 +151,6 @@ export const api = {
       
       for (const key in productData) {
         if (productData[key] !== null && productData[key] !== undefined) {
-          // ✅ Convertimos booleanos a 1 o 0 para la base de datos
           let finalValue = productData[key];
           if (typeof finalValue === 'boolean') {
             finalValue = finalValue ? 1 : 0;
@@ -184,7 +183,6 @@ export const api = {
             continue; 
           }
           
-          // ✅ Convertimos booleanos a 1 o 0 para la base de datos
           let finalValue = productData[key];
           if (typeof finalValue === 'boolean') {
             finalValue = finalValue ? 1 : 0;
@@ -241,54 +239,32 @@ export const api = {
     }
   },
 
-  // ===== Payments (MercadoPago) =====
-  async getPublicKey() {
+  // ===== Payments (MercadoPago Checkout API) =====
+  
+  // Obtiene la llave pública necesaria para inicializar el Brick en el frontend
+  async getMercadoPagoPublicKey() {
     try {
       const response = await fetch(`${API_BASE_URL}/payment/public-key`);
       const data = await response.json();
-      return data.public_key;
+      return data; // Devolvemos el objeto completo para acceder a data.public_key en Checkout.vue
     } catch (error) {
       console.error('Error obteniendo public key:', error);
       return null;
     }
   },
 
-  async createPaymentPreference(paymentData) {
+  // Procesa el pago enviando el token generado por el Brick hacia el controlador de Laravel
+  async processDirectPayment(paymentData) {
     try {
-      const response = await fetchWithAuth('/payment/preference', {
+      const response = await fetchWithAuth('/payment/process', {
         method: 'POST',
         body: JSON.stringify(paymentData),
       });
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error creando preferencia de pago:', error);
-      return { error: 'Error creando preferencia de pago' };
+      console.error('Error procesando el pago directo:', error);
+      return { success: false, error: 'Fallo de conexión al procesar el pago' };
     }
-  },
-
-  async createPayment(paymentData) {
-    try {
-      const response = await fetchWithAuth('/payment/create', {
-        method: 'POST',
-        body: JSON.stringify(paymentData),
-      });
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error procesando pago:', error);
-      return { error: 'Error procesando pago' };
-    }
-  },
-
-  async getPaymentStatus(paymentId) {
-    try {
-      const response = await fetchWithAuth(`/payment/${paymentId}/status`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error obteniendo estado del pago:', error);
-      return { error: 'Error obteniendo estado del pago' };
-    }
-  },
+  }
 };

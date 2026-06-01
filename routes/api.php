@@ -18,27 +18,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 });
 
-// Public Products API (customers can view)
+// Public Products API
 Route::apiResource('products', ProductController::class, ['only' => ['index', 'show']]);
 
 // Public Categories API
 Route::apiResource('categories', CategoryController::class, ['only' => ['index', 'show']]);
 
-// Payment routes
-Route::post('/payment/preference', [PaymentController::class, 'createPreference'])->name('payment.preference');
-Route::post('/payment/create', [PaymentController::class, 'createPayment'])->name('payment.create');
-Route::get('/payment/{paymentId}/status', [PaymentController::class, 'getPaymentStatus'])->name('payment.status');
+// Payment routes (Checkout API - Transparente)
+Route::post('/payment/process', [PaymentController::class, 'processPayment'])->name('payment.process');
 Route::get('/payment/public-key', [PaymentController::class, 'getPublicKey'])->name('payment.public-key');
-
-// Payment callbacks (used by MercadoPago)
-Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
-Route::get('/payment/pending', [PaymentController::class, 'pending'])->name('payment.pending');
-Route::get('/payment/failure', [PaymentController::class, 'failure'])->name('payment.failure');
 
 // Webhooks (public for MercadoPago)
 Route::post('/payment/webhook', [PaymentController::class, 'handleWebhook'])->name('payment.webhook');
 
-// Admin routes (only for admin users)
+// Admin routes
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::apiResource('products', AdminProductController::class);
