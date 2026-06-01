@@ -37,29 +37,25 @@ class PaymentController extends Controller
                 'payer' => 'required|array',
                 'payer.name' => 'required|string',
                 'payer.email' => 'required|email',
-                // Los campos phone y address se reciben del frontend pero se omiten 
-                // en el envio a MercadoPago para evitar rechazos por politicas de formato.
-                'payer.phone' => 'nullable|string',
-                'payer.address' => 'nullable|string',
             ]);
 
-            // 1. Calculo del monto subtotal iterando sobre los elementos del carrito
+            // Calculo del monto subtotal iterando sobre los elementos del carrito
             $total = collect($validated['items'])->sum(function ($item) {
                 return $item['quantity'] * $item['unit_price'];
             });
 
-            // Adicion de la carga impositiva (10%)
+            // Adicion de la carga impositiva del 10%
             $tax = $total * 0.10;
             $totalWithTax = $total + $tax;
 
-            // 2. Generacion del registro persistente de la orden en estado inicial
+            // Generacion del registro persistente de la orden en estado inicial
             $order = Order::create([
                 'user_id' => auth()->id() ?? 1,
                 'total' => $totalWithTax,
                 'status' => 'pendiente',
             ]);
 
-            // 3. Estructuracion del payload requerido por la API de Preferencias
+            // Estructuracion del payload requerido por la API de Preferencias
             $preferenceData = [
                 'items' => array_map(function ($item) {
                     return [
@@ -70,8 +66,7 @@ class PaymentController extends Controller
                     ];
                 }, $validated['items']),
                 
-                // Restriccion de datos del pagador exclusivamente a nombre y correo 
-                // para garantizar el cumplimiento de las politicas del entorno de pruebas.
+                // Definicion del pagador para cumplir con los requerimientos basicos de MercadoPago
                 'payer' => [
                     'name' => $validated['payer']['name'],
                     'email' => $validated['payer']['email'],
@@ -119,17 +114,17 @@ class PaymentController extends Controller
     }
 
     /**
-     * Handle MercadoPago webhook notifications (IPN & Webhooks V2)
+     * Handle MercadoPago webhook notifications
      */
     public function handleWebhook(Request $request)
     {
         try {
-            // Soporte dual: Deteccion de identificadores a traves de parametros URL o cuerpo JSON
+            // Deteccion de identificadores a traves de parametros URL o cuerpo JSON
             $type = $request->query('type') ?? $request->input('type');
             $id = $request->query('id') ?? $request->input('data.id');
 
             if ($type === 'payment' && $id) {
-                // Verificacion del estado definitivo del pago directamente con el proveedor
+                // Verificacion del estado definitivo del pago ante el proveedor
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->accessToken,
                 ])->get("{$this->apiUrl}/v1/payments/{$id}");
@@ -140,38 +135,32 @@ class PaymentController extends Controller
                     $status = $payment['status'];
                     $orderId = $payment['external_reference'];
 
-                    Log::info("Notificacion Webhook procesada. ID Orden: {$orderId}, Estado Transaccion: {$status}");
+                    Log::info("Notificacion Webhook procesada. ID Orden: {$orderId}, Estado: {$status}");
 
-                    // Sincronizacion del estado de la orden en la base de datos
+                    // Sincronizacion del estado de la orden en la base de datos local
                     $order = Order::find($orderId);
                     if ($order) {
                         if ($status === 'approved') {
-                            $order->update([
-                                'status' => 'aprobado',
-                                'mp_payment_id' => $id
-                            ]);
+                            $order->update(['status' => 'aprobado', 'mp_payment_id' => $id]);
                             Log::info("Estado de Orden #{$orderId} actualizado a: APROBADA.");
                         } elseif ($status === 'rejected') {
-                            $order->update([
-                                'status' => 'rechazado',
-                                'mp_payment_id' => $id
-                            ]);
+                            $order->update(['status' => 'rechazado', 'mp_payment_id' => $id]);
                             Log::info("Estado de Orden #{$orderId} actualizado a: RECHAZADA.");
                         }
                     }
                 }
             }
 
-            // Retorno obligatorio del codigo HTTP 200 para confirmar la recepcion satisfactoria al emisor
+            // Confirmacion de recepcion al servidor emisor
             return response()->json(['status' => 'received'], 200);
         } catch (\Exception $e) {
-            Log::error('Excepcion no controlada durante el procesamiento del Webhook:', ['error' => $e->getMessage()]);
+            Log::error('Excepcion en el procesamiento del Webhook:', ['error' => $e->getMessage()]);
             return response()->json(['error' => 'Fallo en la ejecucion del Webhook'], 500);
         }
     }
 
     /**
-     * Payment success callback
+     * Callback de confirmacion de pago exitoso
      */
     public function success(Request $request)
     {
@@ -183,7 +172,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Payment pending callback
+     * Callback de pago pendiente
      */
     public function pending(Request $request)
     {
@@ -195,7 +184,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Payment failure callback
+     * Callback de pago rechazado
      */
     public function failure(Request $request)
     {
@@ -207,7 +196,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Get public key for frontend
+     * Obtencion de clave publica para el frontend
      */
     public function getPublicKey()
     {
