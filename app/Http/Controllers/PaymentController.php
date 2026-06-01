@@ -55,34 +55,24 @@ class PaymentController extends Controller
                 'status' => 'pendiente',
             ]);
 
-            // Estructuracion del payload requerido por la API de Preferencias
-            $preferenceData = [
-                'items' => array_map(function ($item) {
-                    return [
-                        'title' => $item['title'],
-                        'quantity' => intval($item['quantity']),
-                        'unit_price' => floatval($item['unit_price']),
-                        'currency_id' => 'PEN' 
-                    ];
-                }, $validated['items']),
-                
-                // Definicion del pagador para cumplir con los requerimientos basicos de MercadoPago
-                'payer' => [
-                    'name' => $validated['payer']['name'],
-                    'email' => $validated['payer']['email'],
-                ],
-                
-                'back_urls' => [
-                    'success' => 'https://funko.blog/?status=success',
-                    'pending' => 'https://funko.blog/?status=pending',
-                    'failure' => 'https://funko.blog/?status=failure',
-                ],
-               
-                
-                // Vinculacion del identificador local con la transaccion externa
-                'external_reference' => strval($order->id),
-                
-            ];
+          // En tu método createPreference, modifica el payload para que sea lo MÁS SIMPLE posible:
+$preferenceData = [
+    'items' => [
+        [
+            'title' => 'Producto de Prueba', // Nombre genérico para evitar filtros
+            'quantity' => 1,
+            'unit_price' => 1.10,
+            'currency_id' => 'PEN'
+        ]
+    ],
+    'back_urls' => [
+        'success' => 'https://funko.blog/',
+        'failure' => 'https://funko.blog/',
+        'pending' => 'https://funko.blog/'
+    ],
+    'auto_return' => 'approved',
+    // ELIMINA 'external_reference' y 'notification_url' POR AHORA para la prueba
+];
 
             // Peticion HTTP POST hacia la API de MercadoPago
             $response = Http::withHeaders([
