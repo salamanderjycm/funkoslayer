@@ -3,7 +3,7 @@
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold text-purple-600">📊 Panel Administrativo</h1>
+          <h1 class="text-2xl font-bold text-purple-600">Panel Administrativo</h1>
           <p class="text-sm text-gray-600">Bienvenido, {{ user.name }}</p>
         </div>
         <button
@@ -22,21 +22,21 @@
           :class="activeTab === 'list' ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-gray-700 border hover:bg-gray-50'"
           class="px-6 py-2 rounded-lg font-semibold transition-all"
         >
-          📦 Gestionar Productos
+          Gestionar Productos
         </button>
         <button
           @click="activeTab = 'create'"
           :class="activeTab === 'create' ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-gray-700 border hover:bg-gray-50'"
           class="px-6 py-2 rounded-lg font-semibold transition-all"
         >
-          ➕ Nuevo Producto
+          Nuevo Producto
         </button>
         <button
           @click="activeTab = 'categories'"
           :class="activeTab === 'categories' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-700 border hover:bg-gray-50'"
           class="px-6 py-2 rounded-lg font-semibold transition-all"
         >
-          🏷️ Gestionar Categorías
+          Gestionar Categorías
         </button>
       </div>
 
@@ -48,7 +48,7 @@
         </div>
 
         <div v-else-if="products.length === 0" class="text-center text-gray-500 py-8">
-          <p>No hay productos aún</p>
+          <p>No se encontraron productos registrados</p>
         </div>
 
         <div v-else class="overflow-x-auto">
@@ -77,13 +77,13 @@
                     @click="editProduct(product)"
                     class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg mr-2 transition-colors text-sm"
                   >
-                    ✏️
+                    Editar
                   </button>
                   <button
                     @click="deleteProduct(product.id)"
                     class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-colors text-sm"
                   >
-                    🗑️
+                    Eliminar
                   </button>
                 </td>
               </tr>
@@ -96,7 +96,7 @@
         <h2 class="text-2xl font-bold mb-6">{{ editingProduct ? 'Editar Producto' : 'Crear Nuevo Producto' }}</h2>
 
         <div v-if="categories.length === 0" class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded text-yellow-800 text-sm">
-          ⚠️ <strong>¡Atención!</strong> Aún no has creado ninguna categoría. Te recomendamos crear una primero en la pestaña "Categorías" para poder clasificar tu producto.
+          Atención: No existen categorías registradas en el sistema. Se recomienda crear una categoría desde la pestaña correspondiente antes de proceder con el registro de productos.
         </div>
 
         <form @submit.prevent="handleSaveProduct" class="space-y-4">
@@ -132,7 +132,7 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Precio * (S/)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Precio de Venta * (S/)</label>
               <input
                 v-model="formData.price"
                 type="number"
@@ -142,7 +142,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Costo (S/)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Costo Adquisición (S/)</label>
               <input
                 v-model="formData.cost"
                 type="number"
@@ -154,7 +154,7 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Stock *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Inventario disponible (Stock) *</label>
               <input
                 v-model="formData.stock"
                 type="number"
@@ -163,7 +163,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Categoría *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Asignación de Categoría *</label>
               <select
                 v-model="formData.category_id"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
@@ -178,7 +178,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Imagen del Producto</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Recurso de Imagen del Producto</label>
             <input
               type="file"
               @change="handleImageUpload"
@@ -194,7 +194,7 @@
                 type="checkbox"
                 class="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-600"
               />
-              <span class="ml-2 text-sm text-gray-700">Producto activo</span>
+              <span class="ml-2 text-sm text-gray-700">Habilitar estado activo para visualización</span>
             </label>
           </div>
 
@@ -208,7 +208,7 @@
               :disabled="savingProduct"
               class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
             >
-              {{ savingProduct ? 'Guardando...' : editingProduct ? 'Actualizar' : 'Crear Producto' }}
+              {{ savingProduct ? 'Procesando...' : editingProduct ? 'Actualizar Registro' : 'Registrar Producto' }}
             </button>
             <button
               type="button"
@@ -228,18 +228,18 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de Categoría *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Categoría *</label>
                 <input 
                   v-model="catForm.name" 
                   @input="generateCatSlug"
                   type="text" 
-                  placeholder="Ej. Funkos Marvel" 
+                  placeholder="Ej. Series Animadas" 
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   required
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL amigable (Slug) *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Identificador de URL (Slug) *</label>
                 <input 
                   v-model="catForm.slug" 
                   type="text" 
@@ -251,7 +251,7 @@
             
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen (Opcional, max 2MB)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Alusiva (Opcional, max 2MB)</label>
                 <input 
                   type="file" 
                   ref="catFileInput"
@@ -261,7 +261,7 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Descripción General</label>
                 <textarea 
                   v-model="catForm.description" 
                   rows="2" 
@@ -277,7 +277,7 @@
               :disabled="savingCategory"
               class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
             >
-              {{ savingCategory ? 'Guardando...' : 'Crear Categoría' }}
+              {{ savingCategory ? 'Procesando...' : 'Registrar Categoría' }}
             </button>
           </div>
 
@@ -286,19 +286,19 @@
         </form>
 
         <div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-4">Categorías Actuales ({{ categories.length }})</h3>
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Categorías Vigentes ({{ categories.length }})</h3>
           <div v-if="categories.length === 0" class="text-gray-500 text-sm italic p-8 text-center border rounded-lg bg-gray-50">
-            No hay categorías registradas.
+            No se han detectado categorías registradas en el sistema.
           </div>
           <ul v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <li 
               v-for="category in categories" 
               :key="category.id" 
-              class="flex items-center p-4 border rounded-lg bg-white"
+              class="flex items-center p-4 border rounded-lg bg-white shadow-sm"
             >
               <div class="w-14 h-14 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border mr-4">
                 <img v-if="category.image" :src="`/storage/${category.image}`" class="w-full h-full object-cover" />
-                <span v-else class="text-gray-400 text-xs text-center">Sin<br>foto</span>
+                <span v-else class="text-gray-400 text-xs text-center">Sin recurso<br>multimedia</span>
               </div>
               
               <div class="flex-1 overflow-hidden">
@@ -324,12 +324,11 @@ const props = defineProps({
 
 const emit = defineEmits(['logout']);
 
-// --- ESTADOS GENERALES ---
-const activeTab = ref('categories'); // Empezamos en categorías para que cree la primera
+// Declaración de estados lógicos globales de la aplicación
+const activeTab = ref('categories');
 const loading = ref(false);
-const token = localStorage.getItem('auth_token');
 
-// --- ESTADOS DE PRODUCTOS ---
+// Estructuras de datos y variables de estado para la entidad Productos
 const products = ref([]);
 const savingProduct = ref(false);
 const formError = ref('');
@@ -347,7 +346,7 @@ const formData = ref({
   active: true,
 });
 
-// --- ESTADOS DE CATEGORÍAS ---
+// Estructuras de datos y variables de estado para la entidad Categorías
 const categories = ref([]);
 const savingCategory = ref(false);
 const catSuccessMsg = ref('');
@@ -362,19 +361,23 @@ const catForm = ref({
 });
 
 // ==========================================
-// MÉTODOS DE PRODUCTOS
+// OPERACIONES LÓGICAS DE PRODUCTOS
 // ==========================================
+
+// Controlador de asignación para la carga de imágenes de productos
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (file) formData.value.image = file;
 };
 
+// Solicitud HTTP asíncrona para obtener el conjunto global de productos
 const loadProducts = async () => {
   loading.value = true;
   products.value = await api.getAdminProducts();
   loading.value = false;
 };
 
+// Inicialización del entorno de edición y mapeo de atributos del producto seleccionado
 const editProduct = (product) => {
   editingProduct.value = product;
   formData.value = {
@@ -385,12 +388,13 @@ const editProduct = (product) => {
     cost: product.cost,
     stock: product.stock,
     category_id: product.category_id,
-    image: '', // No cargamos la imagen actual en el input file
+    image: '', 
     active: product.active,
   };
   activeTab.value = 'create';
 };
 
+// Restablecimiento de los campos del formulario de productos a sus valores iniciales
 const cancelEdit = () => {
   editingProduct.value = null;
   formData.value = {
@@ -401,6 +405,7 @@ const cancelEdit = () => {
   activeTab.value = 'list';
 };
 
+// Envío estructurado de datos hacia el servicio REST para persistir o actualizar el producto
 const handleSaveProduct = async () => {
   formError.value = '';
   savingProduct.value = true;
@@ -423,25 +428,28 @@ const handleSaveProduct = async () => {
     await loadProducts();
     cancelEdit();
   } else {
-    formError.value = result.message || 'Error guardando producto';
+    formError.value = result.message || 'Error durante la persistencia del producto';
   }
   savingProduct.value = false;
 };
 
+// Solicitud HTTP estructurada para remover permanentemente el registro del producto
 const deleteProduct = async (id) => {
-  if (confirm('¿Estás seguro de eliminar este producto?')) {
+  if (confirm('¿Confirma la eliminación permanente de este registro de producto?')) {
     const result = await api.deleteProduct(id);
     if (result.success) {
       await loadProducts();
     } else {
-      alert('Error eliminando producto: ' + result.message);
+      alert('Error en la baja del producto: ' + result.message);
     }
   }
 };
 
 // ==========================================
-// MÉTODOS DE CATEGORÍAS
+// OPERACIONES LÓGICAS DE CATEGORÍAS
 // ==========================================
+
+// Generación algorítmica automatizada para la normalización de cadenas de texto (Slug/URL)
 const generateCatSlug = () => {
   catForm.value.slug = catForm.value.name
     .toLowerCase()
@@ -452,31 +460,37 @@ const generateCatSlug = () => {
     .replace(/\s+/g, '-');
 };
 
+// Controlador de asignación para el búfer del archivo binario de la imagen de categoría
 const handleCatImageUpload = (event) => {
   catForm.value.image = event.target.files[0];
 };
 
+// Consulta asíncrona mediante el uso dinámico de cabeceras de autorización Bearer Token
 const loadCategories = async () => {
   try {
+    const currentToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+    
     const response = await fetch('/api/categories', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${currentToken}` }
     });
     const result = await response.json();
     if (response.ok && result.success) {
       categories.value = result.data;
     } else {
-      // Si el controlador anterior devuelve el array directo (para compatibilidad)
       categories.value = Array.isArray(result) ? result : [];
     }
   } catch (err) {
-    console.error('Error cargando categorías:', err);
+    console.error('Fallo crítico al recuperar la colección de categorías:', err);
   }
 };
 
+// Transmisión asíncrona mediante Multipart Form Data para encapsular datos y binarios hacia el backend
 const handleSaveCategory = async () => {
   catSuccessMsg.value = '';
   catErrorMsg.value = '';
   savingCategory.value = true;
+  
+  const currentToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
   
   const fd = new FormData();
   fd.append('name', catForm.value.name);
@@ -489,7 +503,7 @@ const handleSaveCategory = async () => {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${currentToken}`
       },
       body: fd
     });
@@ -499,32 +513,33 @@ const handleSaveCategory = async () => {
     if (response.ok && result.success) {
       catSuccessMsg.value = result.message;
       
-      // Limpiar formulario
       catForm.value = { name: '', slug: '', description: '', image: null };
       if (catFileInput.value) catFileInput.value.value = ''; 
       
-      await loadCategories(); // Recargar select de categorías en productos
+      await loadCategories(); 
       
       setTimeout(() => { catSuccessMsg.value = ''; }, 3000);
     } else {
       if (result.errors) {
         catErrorMsg.value = Object.values(result.errors).flat().join(' | ');
       } else {
-        catErrorMsg.value = result.message || 'Error al crear categoría';
+        catErrorMsg.value = result.message || 'Error en la validación o almacenamiento';
       }
     }
   } catch (err) {
-    catErrorMsg.value = 'Ocurrió un error de conexión';
+    catErrorMsg.value = 'Error en la conexión o fallo interno del servidor';
   } finally {
     savingCategory.value = false;
   }
 };
 
+// Solicitud de cierre y revocación de tokens del lado del servidor
 const handleLogout = async () => {
   await api.logout();
   emit('logout');
 };
 
+// Ciclo de vida inicial del componente
 onMounted(() => {
   loadCategories();
   loadProducts();
