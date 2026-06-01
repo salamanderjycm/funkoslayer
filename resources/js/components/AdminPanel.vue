@@ -490,7 +490,8 @@ const handleSaveCategory = async () => {
   catErrorMsg.value = '';
   savingCategory.value = true;
   
-  const currentToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+  // Obtenemos el token directamente en el momento de la ejecución
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
   
   const fd = new FormData();
   fd.append('name', catForm.value.name);
@@ -503,31 +504,21 @@ const handleSaveCategory = async () => {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${currentToken}`
+        'Authorization': `Bearer ${token}` // Asegúrate de que el token no sea null
       },
       body: fd
     });
 
     const result = await response.json();
-
     if (response.ok && result.success) {
-      catSuccessMsg.value = result.message;
-      
+      catSuccessMsg.value = 'Categoría creada con éxito';
+      await loadCategories();
       catForm.value = { name: '', slug: '', description: '', image: null };
-      if (catFileInput.value) catFileInput.value.value = ''; 
-      
-      await loadCategories(); 
-      
-      setTimeout(() => { catSuccessMsg.value = ''; }, 3000);
     } else {
-      if (result.errors) {
-        catErrorMsg.value = Object.values(result.errors).flat().join(' | ');
-      } else {
-        catErrorMsg.value = result.message || 'Error en la validación o almacenamiento';
-      }
+      catErrorMsg.value = result.message || 'Error de autorización';
     }
   } catch (err) {
-    catErrorMsg.value = 'Error en la conexión o fallo interno del servidor';
+    catErrorMsg.value = 'Error de conexión con el servidor';
   } finally {
     savingCategory.value = false;
   }
