@@ -77,18 +77,26 @@ class PaymentController extends Controller
                     'pending' => 'https://funko.blog/?status=pending',
                     'failure' => 'https://funko.blog/?status=failure',
                 ],
-                'auto_return' => 'approved',
+               
                 
                 // Vinculacion del identificador local con la transaccion externa
                 'external_reference' => strval($order->id),
-                'notification_url' => 'https://funko.blog/api/payment/webhook',
+                
             ];
 
             // Peticion HTTP POST hacia la API de MercadoPago
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->accessToken,
-                'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $this->accessToken,
+                        'Content-Type' => 'application/json',
+                        'X-Idempotency-Key' => uniqid(),
             ])->post("{$this->apiUrl}/checkout/preferences", $preferenceData);
+            Log::info('MercadoPago Status', [
+    'status' => $response->status()
+]);
+
+Log::info('MercadoPago Body', [
+    'body' => $response->body()
+]);
 
             if ($response->failed()) {
                 return response()->json([
