@@ -86,7 +86,9 @@ const processPayment = async () => {
     const result = await api.createPaymentPreference(payload);
 
     if (result.success && result.init_point) {
-      window.location.href = result.sandbox_init_point || result.init_point;
+     window.location.href =
+  result.sandbox_init_point ??
+  result.init_point;
     } else {
       generalError.value = result.error || 'Error al conectar con MercadoPago';
     }
