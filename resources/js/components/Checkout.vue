@@ -81,9 +81,6 @@ const renderBrick = async () => {
         visual: {
           style: { theme: 'dark' }
         },
-        paymentMethods: {
-          maxInstallments: 1 // Forzado a 1 sola cuota para entorno de desarrollo
-        }
       },
       callbacks: {
         onReady: () => {
