@@ -97,14 +97,20 @@ class PaymentController extends Controller
 Log::info('MercadoPago Body', [
     'body' => $response->body()
 ]);
+if ($response->failed()) {
 
-            if ($response->failed()) {
-                return response()->json([
-                    'error' => 'Error durante la creacion de la preferencia de pago',
-                    'details' => $response->json(),
-                ], 422);
-            }
+    Log::error('ERROR MERCADOPAGO', [
+        'status' => $response->status(),
+        'body' => $response->body(),
+        'json' => $response->json(),
+    ]);
 
+    dd(
+        $response->status(),
+        $response->body(),
+        $response->json()
+    );
+}
             $preference = $response->json();
 
             return response()->json([
