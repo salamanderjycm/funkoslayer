@@ -485,7 +485,7 @@ const handleSaveCategory = async () => {
   if (catForm.value.image) fd.append('image', catForm.value.image);
 
   try {
-    const response = await fetch('/api/categories', {
+    const response = await fetch('/api/admin/categories', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
