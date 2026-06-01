@@ -41,16 +41,16 @@ const processing = ref(false);
 const generalError = ref('');
 const mp = ref(null);
 
-// Cálculo del total (Asegúrate de que la lógica impositiva coincida con tu backend)
+// Cálculo del total con la carga impositiva
 const total = computed(() => {
   const subtotal = props.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-  return subtotal * 1.10; // +10% de impuesto según tu lógica
+  return subtotal * 1.10;
 });
 
 // Función para inyectar el SDK de MercadoPago
 const loadMercadoPagoSDK = () => {
   return new Promise((resolve) => {
-    if (window.MercadoPago) return resolve(window.MercadoPago);
+    if (window.MarketPago) return resolve(window.MercadoPago);
     const script = document.createElement('script');
     script.src = 'https://sdk.mercadopago.com/js/v2';
     script.onload = () => resolve(window.MercadoPago);
@@ -66,7 +66,7 @@ const renderBrick = async () => {
   try {
     const MercadoPago = await loadMercadoPagoSDK();
     
-    // Obtenemos tu llave pública (TEST-...) desde el backend
+    // Obtenemos la llave pública desde el backend
     const keyData = await api.getMercadoPagoPublicKey();
     mp.value = new MercadoPago(keyData.public_key, { locale: 'es-PE' });
 
@@ -74,29 +74,29 @@ const renderBrick = async () => {
 
     const settings = {
       initialization: {
-        amount: total.value, // Obligatorio para Checkout API
+        // Se formatea el monto a tipo Number con 2 decimales fijos para evitar errores de validación
+        amount: Number(total.value.toFixed(2)), 
       },
       customization: {
         visual: {
-          style: { theme: 'dark' } // Combina perfecto con tu diseño
+          style: { theme: 'dark' }
         },
         paymentMethods: {
-          maxInstallments: 1 // Forzamos 1 sola cuota
+          maxInstallments: 1 // Forzado a 1 sola cuota para entorno de desarrollo
         }
       },
       callbacks: {
         onReady: () => {
-          // El formulario está listo para usarse
+          // Formulario listo para interactuar
         },
         onSubmit: async (cardFormData) => {
           processing.value = true;
           generalError.value = '';
           
           try {
-            // Añadimos la descripción que espera nuestro controlador
             cardFormData.description = 'Compra en Funko Slayer';
 
-            // Enviamos el token al servidor
+            // Envío del token generado hacia el controlador de Laravel
             const result = await api.processDirectPayment(cardFormData);
 
             if (result.success && result.status === 'approved') {
@@ -119,7 +119,7 @@ const renderBrick = async () => {
       },
     };
 
-    // Desmontar el brick anterior si el usuario abrió y cerró el modal rápido
+    // Desmontar controladores de instancias previas
     if (window.cardPaymentBrickController) window.cardPaymentBrickController.unmount();
 
     window.cardPaymentBrickController = await bricksBuilder.create(
@@ -133,10 +133,9 @@ const renderBrick = async () => {
   }
 };
 
-// Escuchamos cuando se abre el modal para renderizar la tarjeta
+// Vigila la apertura del modal para instanciar el componente
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    // Pequeño timeout para asegurar que el div exista en el DOM
     setTimeout(() => renderBrick(), 100);
   } else {
     if (window.cardPaymentBrickController) window.cardPaymentBrickController.unmount();
