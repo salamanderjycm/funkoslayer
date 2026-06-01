@@ -15,7 +15,8 @@ class PaymentController extends Controller
 
     public function __construct()
     {
-        //CONECTADO: Leemos desde config() para evitar errores de caché en producción
+        // Inicializacion de credenciales desde la configuracion de servicios 
+        // para prevenir conflictos generados por la cache en el entorno de produccion.
         $this->publicKey = config('services.mercadopago.public_key');
         $this->accessToken = config('services.mercadopago.access_token');
         $this->apiUrl = 'https://api.mercadopago.com';
@@ -27,7 +28,7 @@ class PaymentController extends Controller
     public function createPreference(Request $request)
     {
         try {
-            // Validar los datos entrantes de la tienda
+            // Validacion de la estructura de datos entrante desde el cliente
             $validated = $request->validate([
                 'items' => 'required|array',
                 'items.*.title' => 'required|string',
@@ -36,59 +37,59 @@ class PaymentController extends Controller
                 'payer' => 'required|array',
                 'payer.name' => 'required|string',
                 'payer.email' => 'required|email',
-                'payer.phone' => 'required|string',
-                'payer.address' => 'required|string',
+                // Los campos phone y address se reciben del frontend pero se omiten 
+                // en el envio a MercadoPago para evitar rechazos por politicas de formato.
+                'payer.phone' => 'nullable|string',
+                'payer.address' => 'nullable|string',
             ]);
 
-            // 🛒 1. Calcular el total del carrito localmente
+            // 1. Calculo del monto subtotal iterando sobre los elementos del carrito
             $total = collect($validated['items'])->sum(function ($item) {
                 return $item['quantity'] * $item['unit_price'];
             });
 
-            // Cálculo del impuesto (10%)
+            // Adicion de la carga impositiva (10%)
             $tax = $total * 0.10;
             $totalWithTax = $total + $tax;
 
-            // 2. Crear la Orden en tu Base de Datos local (Estado inicial: pendiente)
+            // 2. Generacion del registro persistente de la orden en estado inicial
             $order = Order::create([
-                'user_id' => auth()->id() ?? 1, // Usuario logueado o ID 1 por defecto para pruebas
+                'user_id' => auth()->id() ?? 1,
                 'total' => $totalWithTax,
                 'status' => 'pendiente',
             ]);
 
-            // 3. Preparar los datos de la preferencia para MercadoPago
+            // 3. Estructuracion del payload requerido por la API de Preferencias
             $preferenceData = [
                 'items' => array_map(function ($item) {
                     return [
                         'title' => $item['title'],
                         'quantity' => intval($item['quantity']),
                         'unit_price' => floatval($item['unit_price']),
-                        'currency_id' => 'PEN' // Moneda local: Soles peruanos
+                        'currency_id' => 'PEN' 
                     ];
                 }, $validated['items']),
+                
+                // Restriccion de datos del pagador exclusivamente a nombre y correo 
+                // para garantizar el cumplimiento de las politicas del entorno de pruebas.
                 'payer' => [
                     'name' => $validated['payer']['name'],
                     'email' => $validated['payer']['email'],
-                    'phone' => [
-                        'area_code' => '51', // Prefijo de Perú
-                        'number' => str_replace(['+', ' ', '-'], '', $validated['payer']['phone']),
-                    ],
-                    'address' => [
-                        'street_name' => $validated['payer']['address'],
-                    ],
                 ],
+                
                 'back_urls' => [
                     'success' => 'https://funko.blog/?status=success',
                     'pending' => 'https://funko.blog/?status=pending',
                     'failure' => 'https://funko.blog/?status=failure',
                 ],
                 'auto_return' => 'approved',
-                //Vinculamos el ID de nuestra tabla 'orders' con MercadoPago
+                
+                // Vinculacion del identificador local con la transaccion externa
                 'external_reference' => strval($order->id),
                 'notification_url' => 'https://funko.blog/api/payment/webhook',
             ];
 
-            // Crear la preferencia en la API de MercadoPago
+            // Peticion HTTP POST hacia la API de MercadoPago
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->accessToken,
                 'Content-Type' => 'application/json',
@@ -96,7 +97,7 @@ class PaymentController extends Controller
 
             if ($response->failed()) {
                 return response()->json([
-                    'error' => 'Failed to create MercadoPago preference',
+                    'error' => 'Error durante la creacion de la preferencia de pago',
                     'details' => $response->json(),
                 ], 422);
             }
@@ -111,7 +112,7 @@ class PaymentController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Payment preference creation failed',
+                'error' => 'Fallo critico en la inicializacion del pago',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -123,12 +124,12 @@ class PaymentController extends Controller
     public function handleWebhook(Request $request)
     {
         try {
-            // SOPORTE DÚO: Detectar si el ID viene por los parámetros URL o por el cuerpo JSON
+            // Soporte dual: Deteccion de identificadores a traves de parametros URL o cuerpo JSON
             $type = $request->query('type') ?? $request->input('type');
             $id = $request->query('id') ?? $request->input('data.id');
 
             if ($type === 'payment' && $id) {
-                // Consultar el estado real del pago directamente a los servidores de MercadoPago
+                // Verificacion del estado definitivo del pago directamente con el proveedor
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->accessToken,
                 ])->get("{$this->apiUrl}/v1/payments/{$id}");
@@ -136,12 +137,12 @@ class PaymentController extends Controller
                 if ($response->successful()) {
                     $payment = $response->json();
                     
-                    $status = $payment['status']; // approved, pending, rejected
-                    $orderId = $payment['external_reference']; // El ID de nuestra orden local
+                    $status = $payment['status'];
+                    $orderId = $payment['external_reference'];
 
-                    Log::info("MercadoPago Webhook recibido. Orden: {$orderId}, Estado: {$status}");
+                    Log::info("Notificacion Webhook procesada. ID Orden: {$orderId}, Estado Transaccion: {$status}");
 
-                    // ACTUALIZACIÓN AUTOMÁTICA EN BASE DE DATOS
+                    // Sincronizacion del estado de la orden en la base de datos
                     $order = Order::find($orderId);
                     if ($order) {
                         if ($status === 'approved') {
@@ -149,23 +150,23 @@ class PaymentController extends Controller
                                 'status' => 'aprobado',
                                 'mp_payment_id' => $id
                             ]);
-                            Log::info("Orden #{$orderId} marcada como APROBADA.");
+                            Log::info("Estado de Orden #{$orderId} actualizado a: APROBADA.");
                         } elseif ($status === 'rejected') {
                             $order->update([
                                 'status' => 'rechazado',
                                 'mp_payment_id' => $id
                             ]);
-                            Log::info("Orden #{$orderId} marcada como RECHAZADA.");
+                            Log::info("Estado de Orden #{$orderId} actualizado a: RECHAZADA.");
                         }
                     }
                 }
             }
 
-            // 🌟OBLIGATORIO: Responder 200 a MercadoPago para que sepa que procesamos la alerta
+            // Retorno obligatorio del codigo HTTP 200 para confirmar la recepcion satisfactoria al emisor
             return response()->json(['status' => 'received'], 200);
         } catch (\Exception $e) {
-            Log::error('Webhook processing error:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Webhook processing failed'], 500);
+            Log::error('Excepcion no controlada durante el procesamiento del Webhook:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Fallo en la ejecucion del Webhook'], 500);
         }
     }
 
@@ -176,7 +177,7 @@ class PaymentController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => 'Payment completed successfully',
+            'message' => 'Transaccion procesada exitosamente',
             'payment_id' => $request->query('payment_id'),
         ]);
     }
@@ -188,7 +189,7 @@ class PaymentController extends Controller
     {
         return response()->json([
             'success' => false,
-            'message' => 'Payment is pending approval',
+            'message' => 'La transaccion se encuentra pendiente de aprobacion',
             'payment_id' => $request->query('payment_id'),
         ]);
     }
@@ -200,7 +201,7 @@ class PaymentController extends Controller
     {
         return response()->json([
             'success' => false,
-            'message' => 'Payment was declined',
+            'message' => 'La transaccion ha sido declinada',
             'payment_id' => $request->query('payment_id'),
         ]);
     }
