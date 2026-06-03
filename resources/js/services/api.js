@@ -241,19 +241,17 @@ export const api = {
 
   // ===== Payments (MercadoPago Checkout API) =====
   
-  // Obtiene la llave pública necesaria para inicializar el Brick en el frontend
   async getMercadoPagoPublicKey() {
     try {
       const response = await fetch(`${API_BASE_URL}/payment/public-key`);
       const data = await response.json();
-      return data; // Devolvemos el objeto completo para acceder a data.public_key en Checkout.vue
+      return data; 
     } catch (error) {
       console.error('Error obteniendo public key:', error);
       return null;
     }
   },
 
-  // Procesa el pago enviando el token generado por el Brick hacia el controlador de Laravel
   async processDirectPayment(paymentData) {
     try {
       const response = await fetchWithAuth('/payment/process', {

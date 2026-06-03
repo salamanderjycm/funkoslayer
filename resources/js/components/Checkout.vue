@@ -41,13 +41,11 @@ const processing = ref(false);
 const generalError = ref('');
 const mp = ref(null);
 
-// Cálculo del total
 const total = computed(() => {
   const subtotal = props.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
   return subtotal * 1.10;
 });
 
-// Función para inyectar el SDK de MercadoPago
 const loadMercadoPagoSDK = () => {
   return new Promise((resolve) => {
     if (window.MercadoPago) return resolve(window.MercadoPago);
@@ -58,7 +56,6 @@ const loadMercadoPagoSDK = () => {
   });
 };
 
-// Renderizado del Brick
 const renderBrick = async () => {
   if (!props.isOpen || total.value <= 0) {
       return; 
@@ -68,7 +65,6 @@ const renderBrick = async () => {
 
   try {
     const MercadoPago = await loadMercadoPagoSDK();
-    
     const keyData = await api.getMercadoPagoPublicKey();
     mp.value = new MercadoPago(keyData.public_key, { locale: 'es-PE' });
 
@@ -91,14 +87,12 @@ const renderBrick = async () => {
         onReady: () => {
           console.log("Payment Brick principal construido con monto:", total.value);
         },
-        onSubmit: async (formData) => { // formData ya trae todo encapsulado
+        onSubmit: async (formData) => {
           processing.value = true;
           generalError.value = '';
           
           try {
-            // Añadimos la descripción al objeto que viaja a tu backend
             formData.description = 'Compra en Funko Slayer';
-
             const result = await api.processDirectPayment(formData);
 
             if (result.success && result.status === 'approved') {
@@ -121,10 +115,8 @@ const renderBrick = async () => {
       },
     };
 
-    // Desmontar el brick anterior si ya existía uno
     if (window.paymentBrickController) window.paymentBrickController.unmount();
 
-    // EL CAMBIO MAESTRO: Usamos 'payment' en lugar de 'cardPayment'
     window.paymentBrickController = await bricksBuilder.create(
       'payment',
       'paymentBrick_container',
