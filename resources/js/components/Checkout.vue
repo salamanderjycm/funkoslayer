@@ -60,7 +60,6 @@ const loadMercadoPagoSDK = () => {
 
 // Renderizado del Brick
 const renderBrick = async () => {
-  // ESCUDO DE SEGURIDAD: Si no está abierto o el total es 0 o inválido, abortamos la creación.
   if (!props.isOpen || total.value <= 0) {
       return; 
   }
@@ -70,7 +69,6 @@ const renderBrick = async () => {
   try {
     const MercadoPago = await loadMercadoPagoSDK();
     
-    // Obtenemos tu llave pública desde el backend
     const keyData = await api.getMercadoPagoPublicKey();
     mp.value = new MercadoPago(keyData.public_key, { locale: 'es-PE' });
 
@@ -78,34 +76,30 @@ const renderBrick = async () => {
 
     const settings = {
       initialization: {
-        // Garantizamos que el monto siempre será el número final (ej. 1.10)
         amount: Number(total.value.toFixed(2)), 
       },
       customization: {
         visual: {
           style: { theme: 'dark' }
         },
-        // NUEVO: Forzamos la recolección de DNI y Nombre del Titular
         paymentMethods: {
-          types: ["credit_card", "debit_card"]
-        },
-        fields: {
-          cardholderName: "required",
-          identification: "required"
+          creditCard: "all",
+          debitCard: "all"
         }
       },
       callbacks: {
         onReady: () => {
-          console.log("Brick construido exitosamente con monto:", total.value);
+          console.log("Payment Brick principal construido con monto:", total.value);
         },
-        onSubmit: async (cardFormData) => {
+        onSubmit: async (formData) => { // formData ya trae todo encapsulado
           processing.value = true;
           generalError.value = '';
           
           try {
-            cardFormData.description = 'Compra en Funko Slayer';
+            // Añadimos la descripción al objeto que viaja a tu backend
+            formData.description = 'Compra en Funko Slayer';
 
-            const result = await api.processDirectPayment(cardFormData);
+            const result = await api.processDirectPayment(formData);
 
             if (result.success && result.status === 'approved') {
               emit('payment-success');
@@ -128,10 +122,11 @@ const renderBrick = async () => {
     };
 
     // Desmontar el brick anterior si ya existía uno
-    if (window.cardPaymentBrickController) window.cardPaymentBrickController.unmount();
+    if (window.paymentBrickController) window.paymentBrickController.unmount();
 
-    window.cardPaymentBrickController = await bricksBuilder.create(
-      'cardPayment',
+    // EL CAMBIO MAESTRO: Usamos 'payment' en lugar de 'cardPayment'
+    window.paymentBrickController = await bricksBuilder.create(
+      'payment',
       'paymentBrick_container',
       settings
     );
@@ -141,12 +136,11 @@ const renderBrick = async () => {
   }
 };
 
-// Vue vigila tanto que el modal se abra, COMO que el total esté listo.
 watch([() => props.isOpen, () => total.value], ([newIsOpen, newTotal]) => {
   if (newIsOpen && newTotal > 0) {
     setTimeout(() => renderBrick(), 100);
   } else if (!newIsOpen) {
-    if (window.cardPaymentBrickController) window.cardPaymentBrickController.unmount();
+    if (window.paymentBrickController) window.paymentBrickController.unmount();
   }
 });
 
