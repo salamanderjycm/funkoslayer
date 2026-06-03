@@ -49,7 +49,7 @@ const generalError = ref('');
 
 const total = computed(() => {
   const subtotal = props.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-  return subtotal * 1.10;
+  return subtotal * 1.10; // Incluyendo el 10% de impuesto/recargo que tenías
 });
 
 const payWithMercadoPago = async () => {
@@ -59,11 +59,14 @@ const payWithMercadoPago = async () => {
   generalError.value = '';
 
   try {
-    // Armamos un resumen del carrito para enviar a MP
+    // ENVIAMOS EL CARRITO REAL A LARAVEL
     const orderData = {
-      title: 'Compra en Funko Slayer',
-      quantity: 1,
-      unit_price: Number(total.value.toFixed(2))
+      items: props.items.map(item => ({
+        id: item.id,
+        title: item.name || item.title || 'Funko Pop',
+        quantity: item.quantity,
+        price: Number(item.price)
+      }))
     };
 
     const result = await api.createCheckoutPreference(orderData);

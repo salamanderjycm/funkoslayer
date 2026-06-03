@@ -77,6 +77,19 @@ export const api = {
       return { success: false, message: 'Error en registro' };
     }
   },
+  async verifyCode(email, code) {
+    try {
+      const response = await fetchWithAuth('/verify-code', {
+        method: 'POST',
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error en verificación:', error);
+      return { success: false, message: 'Fallo de conexión al verificar el código' };
+    }
+  },
 
   async logout() {
     try {

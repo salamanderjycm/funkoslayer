@@ -1,65 +1,67 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-2xl w-full max-w-md p-8">
-      <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Funko Slayer</h2>
+  <div class="min-h-screen bg-gray-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute top-10 left-10 w-72 h-72 bg-[#FF2A85] rounded-full filter blur-[120px] opacity-20 animate-pulse"></div>
+    <div class="absolute bottom-10 right-10 w-72 h-72 bg-cyan-500 rounded-full filter blur-[120px] opacity-10 animate-pulse"></div>
+
+    <div class="max-w-md w-full bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl p-8 z-10">
+      
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-black tracking-wider text-white italic">
+          FUNKO <span class="text-[#FF2A85]">SLAYER</span>
+        </h1>
+        <p class="text-gray-400 text-sm mt-2">Inicia sesión para cazar tus figuras favoritas</p>
+      </div>
 
       <form @submit.prevent="handleLogin" class="space-y-6">
-        <!-- Email -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input
-            v-model="form.email"
-            type="email"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            placeholder="tu@email.com"
-            required
-          />
+          <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Correo Electrónico</label>
+          <div class="relative">
+            <input 
+              v-model="email"
+              type="email" 
+              required
+              placeholder="ejemplo@correo.com"
+              class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FF2A85] transition-colors"
+            />
+          </div>
         </div>
 
-        <!-- Password -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
-          <input
-            v-model="form.password"
-            type="password"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-bold uppercase tracking-widest text-gray-400">Contraseña</label>
+            <a href="#" class="text-xs text-gray-500 hover:text-[#FF2A85] transition-colors">¿La olvidaste?</a>
+          </div>
+          <input 
+            v-model="password"
+            type="password" 
+            required
             placeholder="••••••••"
-            required
+            class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FF2A85] transition-colors"
           />
         </div>
 
-        <!-- Error Message -->
-        <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+        <div v-if="error" class="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-xl text-sm text-center">
           {{ error }}
         </div>
 
-        <!-- Submit Button -->
-        <button
+        <button 
           type="submit"
           :disabled="loading"
-          class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full py-3.5 bg-gradient-to-r from-[#FF2A85] to-[#C2185B] text-white text-sm font-black uppercase tracking-wider rounded-xl shadow-lg shadow-[#FF2A85]/20 hover:opacity-90 active:scale-[0.99] disabled:opacity-50 transition-all"
         >
-          {{ loading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+          {{ loading ? 'Conectando...' : 'Ingresar al Sistema' }}
         </button>
       </form>
 
-      <!-- Register Link -->
-      <div class="mt-6 text-center">
-        <p class="text-gray-600">¿No tienes cuenta?</p>
-        <button
-          @click="goToRegister"
-          class="text-purple-600 hover:text-purple-700 font-semibold"
-        >
-          Regístrate aquí
-        </button>
+      <div class="mt-8 text-center border-t border-gray-800/60 pt-6">
+        <p class="text-sm text-gray-400">
+          ¿Aún no tienes cuenta? 
+          <button @click="goToRegister" type="button" class="text-[#FF2A85] font-bold hover:underline ml-1">
+            Regístrate
+          </button>
+        </p>
       </div>
 
-      <!-- Demo Credentials -->
-      <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p class="text-sm font-semibold text-blue-800 mb-2">Credenciales de prueba:</p>
-        <p class="text-sm text-blue-700"><strong>Admin:</strong> admin@funkos.com / password123</p>
-        <p class="text-sm text-blue-700"><strong>Cliente:</strong> customer@funkos.com / password123</p>
-      </div>
     </div>
   </div>
 </template>
@@ -68,13 +70,11 @@
 import { ref } from 'vue';
 import { api } from '../services/api.js';
 
+// Usamos los mismos emits que maneja tu componente padre
 const emit = defineEmits(['login-success', 'go-register']);
 
-const form = ref({
-  email: '',
-  password: '',
-});
-
+const email = ref('');
+const password = ref('');
 const loading = ref(false);
 const error = ref('');
 
@@ -82,30 +82,19 @@ const handleLogin = async () => {
   error.value = '';
   loading.value = true;
 
-  try {
-    // ✅ SOLUCIÓN: Agregamos .value para acceder correctamente a los datos del ref
-    const result = await api.login(form.value.email, form.value.password);
+  const result = await api.login(email.value, password.value);
 
-    if (result.success) {
-      emit('login-success', result.user);
-    } else {
-      // Muestra el error exacto que devuelva tu servidor o un mensaje por defecto
-      error.value = result.message || 'Error al iniciar sesión. Revisa tus credenciales.';
-    }
-  } catch (err) {
-    // Un bloque catch es buena práctica por si falla la conexión (ej. servidor caído)
-    console.error("Error en petición:", err);
-    error.value = 'Ocurrió un problema al conectar con el servidor.';
-  } finally {
-    loading.value = false;
+  if (result.success) {
+    emit('login-success', result.user);
+  } else {
+    error.value = result.message || 'Credenciales incorrectas. Intenta de nuevo.';
   }
+
+  loading.value = false;
 };
 
+// Esta función dispara el evento para cambiar la vista al Registro
 const goToRegister = () => {
   emit('go-register');
 };
 </script>
-
-<style scoped>
-/* Login styles */
-</style>
