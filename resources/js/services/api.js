@@ -239,30 +239,18 @@ export const api = {
     }
   },
 
-  // ===== Payments (MercadoPago Checkout API) =====
+  // ===== Payments (MercadoPago Checkout Pro) =====
   
-  async getMercadoPagoPublicKey() {
+  async createCheckoutPreference(orderData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/payment/public-key`);
-      const data = await response.json();
-      return data; 
-    } catch (error) {
-      console.error('Error obteniendo public key:', error);
-      return null;
-    }
-  },
-
-  async processDirectPayment(paymentData) {
-    try {
-      const response = await fetchWithAuth('/payment/process', {
+      const response = await fetchWithAuth('/payment/preference', {
         method: 'POST',
-        body: JSON.stringify(paymentData),
+        body: JSON.stringify(orderData),
       });
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error) {
-      console.error('Error procesando el pago directo:', error);
-      return { success: false, error: 'Fallo de conexión al procesar el pago' };
+      console.error('Error creando preferencia de pago:', error);
+      return { success: false, error: 'No se pudo generar el link de pago' };
     }
   }
 };
