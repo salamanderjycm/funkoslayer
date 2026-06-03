@@ -88,7 +88,8 @@ class PaymentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'init_point' => $response->json()['sandbox_init_point'] 
+                // AQUÍ ESTÁ EL CAMBIO A PRODUCCIÓN:
+                'init_point' => $response->json()['init_point'] 
             ]);
 
         } catch (\Exception $e) {
@@ -131,7 +132,7 @@ class PaymentController extends Controller
                             $items = json_decode($order->cart_data, true);
                             foreach ($items as $item) {
                                 Product::where('id', $item['id'])
-                                       ->decrement('stock', $item['quantity']);
+                                        ->decrement('stock', $item['quantity']);
                             }
                         }
                         
