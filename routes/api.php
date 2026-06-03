@@ -24,9 +24,8 @@ Route::apiResource('products', ProductController::class, ['only' => ['index', 's
 // Public Categories API
 Route::apiResource('categories', CategoryController::class, ['only' => ['index', 'show']]);
 
-// Payment routes (Checkout API - Transparente)
-Route::post('/payment/process', [PaymentController::class, 'processPayment'])->name('payment.process');
-Route::get('/payment/public-key', [PaymentController::class, 'getPublicKey'])->name('payment.public-key');
+// Payment routes (Checkout Pro - Redirección)
+Route::post('/payment/preference', [PaymentController::class, 'createPreference'])->name('payment.preference');
 
 // Webhooks (public for MercadoPago)
 Route::post('/payment/webhook', [PaymentController::class, 'handleWebhook'])->name('payment.webhook');
