@@ -78,14 +78,21 @@ const renderBrick = async () => {
 
     const settings = {
       initialization: {
-        // Ahora garantizamos que el monto siempre será el número final (ej. 1.10)
+        // Garantizamos que el monto siempre será el número final (ej. 1.10)
         amount: Number(total.value.toFixed(2)), 
       },
       customization: {
         visual: {
           style: { theme: 'dark' }
+        },
+        // NUEVO: Forzamos la recolección de DNI y Nombre del Titular
+        paymentMethods: {
+          types: ["credit_card", "debit_card"]
+        },
+        fields: {
+          cardholderName: "required",
+          identification: "required"
         }
-        // Eliminamos el paymentMethods con maxInstallments para que acepte tarjetas de DÉBITO
       },
       callbacks: {
         onReady: () => {
@@ -134,7 +141,7 @@ const renderBrick = async () => {
   }
 };
 
-// EL CAMBIO PRINCIPAL: Ahora Vue vigila tanto que el modal se abra, COMO que el total esté listo.
+// Vue vigila tanto que el modal se abra, COMO que el total esté listo.
 watch([() => props.isOpen, () => total.value], ([newIsOpen, newTotal]) => {
   if (newIsOpen && newTotal > 0) {
     setTimeout(() => renderBrick(), 100);
