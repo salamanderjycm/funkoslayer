@@ -265,5 +265,21 @@ export const api = {
       console.error('Error creando preferencia de pago:', error);
       return { success: false, error: 'No se pudo generar el link de pago' };
     }
-  }
+  },
+  // Obtener historial de pedidos
+  async getMyOrders() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://funko.blog/api/my-orders', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error obteniendo pedidos:', error);
+      return { success: false, orders: [] };
+    }
+  },
 };

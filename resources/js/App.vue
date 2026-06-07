@@ -38,6 +38,13 @@
                :class="currentView === 'categories' ? 'text-[#4DF0FF] drop-shadow-sm font-bold' : 'text-gray-300 hover:text-[#FF2A85] transition-colors'">
               Categorías
             </a>
+            
+            <!-- NUEVO ENLACE: Mis Pedidos -->
+            <a href="#" @click.prevent="currentView = 'dashboard'" 
+               :class="currentView === 'dashboard' ? 'text-[#4DF0FF] drop-shadow-sm font-bold' : 'text-gray-300 hover:text-[#FF2A85] transition-colors'">
+              Mis Pedidos
+            </a>
+
             <a href="#" class="text-gray-300 hover:text-[#FF2A85] transition-colors">Contacto</a>
             <button 
               @click="toggleCart"
@@ -60,13 +67,15 @@
         </div>
       </header>
 
-      <section class="bg-gradient-to-r from-[#FF2A85] via-[#C2185B] to-[#4DF0FF] text-white py-12 border-b-4 border-gray-950">
+      <!-- Ocultamos el banner principal si estamos viendo el Dashboard para que se vea más limpio -->
+      <section v-if="currentView !== 'dashboard'" class="bg-gradient-to-r from-[#FF2A85] via-[#C2185B] to-[#4DF0FF] text-white py-12 border-b-4 border-gray-950">
         <div class="max-w-7xl mx-auto px-4 text-center">
           <h2 class="text-4xl font-black italic tracking-wide mb-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] uppercase">Venta de Funkos</h2>
           <p class="text-xl font-medium drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Colecciona tus personajes favoritos</p>
         </div>
       </section>
 
+      <!-- Vista de Productos -->
       <section v-if="currentView === 'products'" class="max-w-7xl mx-auto px-4 py-12">
         <h3 class="text-3xl font-bold mb-8 text-white">Productos Destacados</h3>
         <div v-if="loading" class="text-center text-gray-400">
@@ -96,7 +105,8 @@
         </div>
       </section>
 
-      <section v-if="currentView === 'categories'" class="max-w-7xl mx-auto px-4 py-12">
+      <!-- Vista de Categorías -->
+      <section v-else-if="currentView === 'categories'" class="max-w-7xl mx-auto px-4 py-12">
         <h3 class="text-3xl font-bold mb-8 text-white">Categorías</h3>
         <div v-if="loadingCategories" class="text-center text-gray-400">
           <p>Cargando categorías...</p>
@@ -123,6 +133,10 @@
           </div>
         </div>
       </section>
+
+      <!-- NUEVA VISTA: Dashboard de Cliente -->
+      <CustomerDashboard v-else-if="currentView === 'dashboard'" />
+
     </div>
 
     <!-- Componente del carrito -->
@@ -153,6 +167,8 @@ import Register from './components/Register.vue';
 import AdminPanel from './components/AdminPanel.vue';
 import ShoppingCart from './components/ShoppingCart.vue';
 import Checkout from './components/Checkout.vue';
+// IMPORTACIÓN DEL NUEVO COMPONENTE
+import CustomerDashboard from './components/CustomerDashboard.vue';
 import { api } from './services/api.js';
 
 // State
