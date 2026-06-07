@@ -39,13 +39,16 @@
               Categorías
             </a>
             
-            <!-- NUEVO ENLACE: Mis Pedidos -->
             <a href="#" @click.prevent="currentView = 'dashboard'" 
                :class="currentView === 'dashboard' ? 'text-[#4DF0FF] drop-shadow-sm font-bold' : 'text-gray-300 hover:text-[#FF2A85] transition-colors'">
               Mis Pedidos
             </a>
 
-            <a href="#" class="text-gray-300 hover:text-[#FF2A85] transition-colors">Contacto</a>
+            <a href="#" @click.prevent="currentView = 'contact'" 
+               :class="currentView === 'contact' ? 'text-[#4DF0FF] drop-shadow-sm font-bold' : 'text-gray-300 hover:text-[#FF2A85] transition-colors'">
+              Contacto
+            </a>
+            
             <button 
               @click="toggleCart"
               class="relative p-2 text-gray-300 hover:text-[#4DF0FF] transition-colors">
@@ -67,15 +70,13 @@
         </div>
       </header>
 
-      <!-- Ocultamos el banner principal si estamos viendo el Dashboard para que se vea más limpio -->
-      <section v-if="currentView !== 'dashboard'" class="bg-gradient-to-r from-[#FF2A85] via-[#C2185B] to-[#4DF0FF] text-white py-12 border-b-4 border-gray-950">
+      <section v-if="!['dashboard', 'contact', 'terms', 'refunds', 'privacy'].includes(currentView)" class="bg-gradient-to-r from-[#FF2A85] via-[#C2185B] to-[#4DF0FF] text-white py-12 border-b-4 border-gray-950">
         <div class="max-w-7xl mx-auto px-4 text-center">
           <h2 class="text-4xl font-black italic tracking-wide mb-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] uppercase">Venta de Funkos</h2>
           <p class="text-xl font-medium drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Colecciona tus personajes favoritos</p>
         </div>
       </section>
 
-      <!-- Vista de Productos -->
       <section v-if="currentView === 'products'" class="max-w-7xl mx-auto px-4 py-12">
         <h3 class="text-3xl font-bold mb-8 text-white">Productos Destacados</h3>
         <div v-if="loading" class="text-center text-gray-400">
@@ -105,7 +106,6 @@
         </div>
       </section>
 
-      <!-- Vista de Categorías -->
       <section v-else-if="currentView === 'categories'" class="max-w-7xl mx-auto px-4 py-12">
         <h3 class="text-3xl font-bold mb-8 text-white">Categorías</h3>
         <div v-if="loadingCategories" class="text-center text-gray-400">
@@ -134,12 +134,107 @@
         </div>
       </section>
 
-      <!-- NUEVA VISTA: Dashboard de Cliente -->
       <CustomerDashboard v-else-if="currentView === 'dashboard'" />
+
+      <section v-else-if="currentView === 'contact'" class="max-w-4xl mx-auto px-4 py-16 text-gray-300">
+        <h2 class="text-3xl font-black italic text-white mb-6 uppercase border-b border-gray-800 pb-4">Contacto y Atención al Cliente</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+          <div class="bg-gray-900 border border-gray-800 p-6 rounded-xl">
+            <h3 class="text-[#4DF0FF] font-bold text-xl mb-4">Información Directa</h3>
+            <p class="mb-2"><strong>📍 Ubicación:</strong> Anta, Cusco, Perú</p>
+            <p class="mb-2"><strong>📧 Correo:</strong> soporte@funko.blog</p>
+            <p class="mb-2"><strong>📱 WhatsApp:</strong> +51 999 888 777</p>
+            <p class="mt-4 text-sm text-gray-500">Horario de atención: Lunes a Viernes de 9:00 AM a 6:00 PM.</p>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 p-6 rounded-xl">
+            <h3 class="text-[#FF2A85] font-bold text-xl mb-4">¿Dudas con tu pedido?</h3>
+            <p class="text-sm leading-relaxed">
+              Si tuviste algún inconveniente con tu pago vía Mercado Pago o Yape, o quieres saber el estado de tu envío a provincia, escríbenos directamente a nuestro WhatsApp indicando tu número de Orden (lo encuentras en la sección "Mis Pedidos").
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section v-else-if="currentView === 'terms'" class="max-w-4xl mx-auto px-4 py-16 text-gray-300">
+        <h2 class="text-3xl font-black italic text-white mb-6 uppercase border-b border-gray-800 pb-4">Términos y Condiciones</h2>
+        <div class="space-y-6 text-sm leading-relaxed">
+          <p>Bienvenido a Funko Slayer. Al utilizar nuestra plataforma y realizar compras, aceptas los siguientes términos aplicables en el territorio peruano.</p>
+          <h3 class="text-[#4DF0FF] font-bold text-lg mt-4">1. Pagos y Transacciones</h3>
+          <p>Todos los pagos son procesados de forma segura a través de Mercado Pago. Aceptamos tarjetas de crédito, débito y transferencias vía Yape. Funko Slayer no almacena datos financieros ni números de tarjeta en sus servidores.</p>
+          <h3 class="text-[#4DF0FF] font-bold text-lg mt-4">2. Disponibilidad de Stock</h3>
+          <p>El inventario se actualiza en tiempo real. En el improbable caso de que se apruebe una compra de un producto sin stock debido a un error del sistema, nos comunicaremos inmediatamente para ofrecer un reemplazo o la devolución del 100% de su dinero.</p>
+          <h3 class="text-[#4DF0FF] font-bold text-lg mt-4">3. Envíos y Entregas</h3>
+          <p>Realizamos envíos a nivel nacional desde Cusco. Los tiempos de entrega varían según la agencia de transporte (Shalom, Olva Courier, etc.) y la provincia de destino. El número de seguimiento será proporcionado una vez despachado el paquete.</p>
+        </div>
+      </section>
+
+      <section v-else-if="currentView === 'refunds'" class="max-w-4xl mx-auto px-4 py-16 text-gray-300">
+        <h2 class="text-3xl font-black italic text-white mb-6 uppercase border-b border-gray-800 pb-4">Políticas de Devolución y Reembolso</h2>
+        <div class="space-y-6 text-sm leading-relaxed">
+          <p>En Funko Slayer nos aseguramos de que cada figura llegue en perfectas condiciones a tu colección. Sin embargo, si surge algún inconveniente, aplicamos las siguientes políticas en cumplimiento con el Código de Protección y Defensa del Consumidor (INDECOPI):</p>
+          <ul class="list-disc pl-5 space-y-2 mt-4 text-gray-400">
+            <li><strong>Productos Dañados:</strong> Si el Funko llega con daños de fábrica o la caja está seriamente afectada por el transporte, tienes un plazo de 48 horas desde la recepción para reportarlo a nuestro correo o WhatsApp con fotografías como evidencia.</li>
+            <li><strong>Reembolsos:</strong> Los reembolsos por cancelaciones aprobadas se procesarán a través del mismo medio de pago utilizado (Mercado Pago) o vía transferencia interbancaria. El dinero puede tardar entre 2 a 15 días hábiles en reflejarse en tu cuenta bancaria, dependiendo de las políticas de tu banco.</li>
+            <li><strong>Excepciones:</strong> No se aceptan devoluciones por "cambio de opinión" una vez que el producto ha sido abierto o extraído de su empaque original protector.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section v-else-if="currentView === 'privacy'" class="max-w-4xl mx-auto px-4 py-16 text-gray-300">
+        <h2 class="text-3xl font-black italic text-white mb-6 uppercase border-b border-gray-800 pb-4">Políticas de Privacidad</h2>
+        <div class="space-y-6 text-sm leading-relaxed">
+          <p>En cumplimiento de la Ley N° 29733, Ley de Protección de Datos Personales, Funko Slayer garantiza la seguridad y confidencialidad de la información proporcionada por nuestros clientes.</p>
+          <p><strong>Uso de la Información:</strong> Los datos personales (nombre, correo, dirección) se utilizan exclusivamente para procesar tus pedidos, emitir comprobantes de pago y coordinar el envío de tus productos. No vendemos ni compartimos tu información con terceros no relacionados con la logística de entrega.</p>
+        </div>
+      </section>
+
+      <footer class="bg-gray-950 border-t border-gray-900 pt-12 pb-8 mt-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          
+          <div class="col-span-1 md:col-span-1">
+            <h3 class="text-xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-[#FF2A85] to-[#4DF0FF] uppercase mb-4">Funko Slayer</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Tu tienda especializada en figuras de colección. Cazamos los Funkos más exclusivos para que los tengas en tu repisa.
+            </p>
+          </div>
+
+          <div>
+            <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Enlaces Rápidos</h4>
+            <ul class="space-y-2 text-sm text-gray-400">
+              <li><a href="#" @click.prevent="currentView = 'products'" class="hover:text-[#4DF0FF] transition-colors">Tienda</a></li>
+              <li><a href="#" @click.prevent="currentView = 'categories'" class="hover:text-[#4DF0FF] transition-colors">Categorías</a></li>
+              <li><a href="#" @click.prevent="currentView = 'dashboard'" class="hover:text-[#4DF0FF] transition-colors">Mis Pedidos</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Legales</h4>
+            <ul class="space-y-2 text-sm text-gray-400">
+              <li><a href="#" @click.prevent="currentView = 'terms'" class="hover:text-[#FF2A85] transition-colors">Términos y Condiciones</a></li>
+              <li><a href="#" @click.prevent="currentView = 'privacy'" class="hover:text-[#FF2A85] transition-colors">Políticas de Privacidad</a></li>
+              <li><a href="#" @click.prevent="currentView = 'refunds'" class="hover:text-[#FF2A85] transition-colors">Políticas de Devolución</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Atención al Cliente</h4>
+            <ul class="space-y-2 text-sm text-gray-400">
+              <li><a href="#" @click.prevent="currentView = 'contact'" class="hover:text-cyan-400 transition-colors flex items-center gap-2"><span>💬</span> Contáctanos</a></li>
+              <li class="pt-2">
+                <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-icono-1024.png" alt="Mercado Pago" class="h-6 opacity-70 grayscale hover:grayscale-0 transition-all">
+              </li>
+            </ul>
+          </div>
+
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 pt-8 border-t border-gray-900 text-center text-xs text-gray-600 font-mono">
+          &copy; {{ new Date().getFullYear() }} Funko Slayer. Todos los derechos reservados. Desarrollado en Perú.
+        </div>
+      </footer>
 
     </div>
 
-    <!-- Componente del carrito -->
     <ShoppingCart 
       :isOpen="showCart"
       :items="cart"
@@ -149,7 +244,6 @@
       @checkout="handleCheckout"
     />
 
-    <!-- Componente de Checkout -->
     <Checkout 
       :isOpen="showCheckout"
       :items="cart"
