@@ -282,4 +282,40 @@ export const api = {
       return { success: false, orders: [] };
     }
   },
+  // Traer todas las órdenes (Solo Admin)
+  async getAllOrders() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/orders', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error obteniendo todas las órdenes:', error);
+      return { success: false, orders: [] };
+    }
+  },
+
+  // Cambiar el estado de una orden (Solo Admin)
+  async updateOrderStatus(orderId, status) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error actualizando estado:', error);
+      return { success: false };
+    }
+  },
 };

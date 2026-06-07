@@ -17,6 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/my-orders', [App\Http\Controllers\OrderController::class, 'myOrders']);
+    Route::get('/admin/orders', [App\Http\Controllers\OrderController::class, 'adminOrders']);
+    Route::put('/admin/orders/{id}/status', [App\Http\Controllers\OrderController::class, 'updateStatus']);
 });
 
 // Public Products API
