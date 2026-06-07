@@ -13,7 +13,8 @@ class Order extends Model
         'user_id',
         'total',
         'status',
-        'mp_payment_id'
+        'mp_payment_id',
+        'cart_data'
     ];
 
     // Relación: Una orden pertenece a un usuario
