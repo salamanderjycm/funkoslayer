@@ -19,7 +19,7 @@
       @logout="handleLogout"
     />
 
-    <div v-else class="min-h-screen bg-gray-900 text-gray-200">
+    <div v-else class="min-h-screen bg-gray-900 text-gray-200 flex flex-col">
       <header class="bg-gray-800 border-b border-gray-700 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div class="flex items-center gap-3">
@@ -188,7 +188,7 @@
         </div>
       </section>
 
-      <footer class="bg-gray-950 border-t border-gray-900 pt-12 pb-8 mt-12 mt-auto">
+      <footer class="bg-gray-950 border-t border-gray-900 pt-12 pb-8 mt-auto w-full">
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           
           <div class="col-span-1 md:col-span-1">
@@ -261,7 +261,6 @@ import Register from './components/Register.vue';
 import AdminPanel from './components/AdminPanel.vue';
 import ShoppingCart from './components/ShoppingCart.vue';
 import Checkout from './components/Checkout.vue';
-// IMPORTACIÓN DEL NUEVO COMPONENTE
 import CustomerDashboard from './components/CustomerDashboard.vue';
 import { api } from './services/api.js';
 
